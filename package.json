@@ -1,0 +1,13 @@
+{
+  "name": "consensus-2023-web3athon",
+  "version": "1.0.0",
+  "description": "A consensus 2023 web3athon submission",
+  "main": "index.js",
+  "repository": "git@github.com:clixpesa/consensus-2023-web3athon.git",
+  "author": "Kachi <kachdekan@gmail.com>, Sam <samwelmoyi@gmail.com>",
+  "license": "Apache 2.0",
+  "workspaces": [
+    "packages/*"
+  ],
+  "private": true
+}
