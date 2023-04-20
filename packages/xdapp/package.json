@@ -1,5 +1,5 @@
 {
-  "name": "xdapp",
+  "name": "@clixpesa/xdapp",
   "version": "1.0.0",
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
@@ -9,13 +9,20 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@clixpesa/native-base": "3.5.0",
     "expo": "~48.0.11",
     "expo-status-bar": "~1.4.4",
     "react": "18.2.0",
-    "react-native": "0.71.6"
+    "react-dom": "^18.2.0",
+    "react-native": "0.71.6",
+    "react-native-safe-area-context": "4.5.0",
+    "react-native-svg": "13.4.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.20.0"
+    "@babel/core": "^7.20.0",
+    "@babel/preset-env": "^7.20.0",
+    "@types/react": "^18.0.37",
+    "@types/react-native": "^0.71.6"
   },
   "private": true
 }
