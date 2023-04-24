@@ -1,7 +1,7 @@
 import { StatusBar } from 'expo-status-bar';
 import { NativeBaseProvider } from '@clixpesa/native-base';
 
-import { theme } from '@clixpesa/native-base';
+import { theme } from './theme';
 import { Navigation } from './navigation';
 
 export default function App() {

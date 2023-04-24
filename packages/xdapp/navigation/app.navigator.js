@@ -2,7 +2,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-remix-icon';
 import { Box, Text } from '@clixpesa/native-base';
 
-//import { HomeScreen } from '../features/essentials';
+import { HomeScreen } from '../features/essentials';
 import { SpacesNavigator } from './spaces.navigator';
 import { LoansNavigator } from './loans.navigator';
 import { AccountNavigator } from './account.navigator';
@@ -31,14 +31,6 @@ const screenOptions = ({ route }) => {
     ),
     tabBarHideOnKeyboard: true,
   };
-};
-
-const HomeScreen = () => {
-  return (
-    <Box flex={1} bg="primary.100" alignItems="center" justifyContent="center">
-      <Text fontSize="xl">Home Screen!</Text>
-    </Box>
-  );
 };
 
 export const AppNavigator = () => {
