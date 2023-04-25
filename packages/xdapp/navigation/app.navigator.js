@@ -1,6 +1,7 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Icon from 'react-native-remix-icon';
-import { Box, Text } from '@clixpesa/native-base';
+import { Box, Text, Avatar, Pressable, HStack } from '@clixpesa/native-base';
+import { useNavigation } from '@react-navigation/native';
 
 import { HomeScreen } from '../features/essentials';
 import { SpacesNavigator } from './spaces.navigator';
@@ -30,6 +31,8 @@ const screenOptions = ({ route }) => {
       </Text>
     ),
     tabBarHideOnKeyboard: true,
+    headerLeft: () => <AccPressable />,
+    headerRight: () => <HeaderRightIcons />,
   };
 };
 
@@ -37,9 +40,60 @@ export const AppNavigator = () => {
   return (
     <Tab.Navigator screenOptions={screenOptions}>
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Spaces" component={SpacesNavigator} options={{ headerShown: false }} />
-      <Tab.Screen name="Loans" component={LoansNavigator} options={{ headerShown: false }} />
-      <Tab.Screen name="Account" component={AccountNavigator} options={{ headerShown: false }} />
+      <Tab.Screen name="Spaces" component={SpacesNavigator} />
+      <Tab.Screen name="Loans" component={LoansNavigator} />
+      <Tab.Screen name="Account" component={AccountNavigator} />
     </Tab.Navigator>
   );
 };
+
+function HeaderRightIcons() {
+  const navigation = useNavigation();
+  return (
+    <HStack space="5" mr="3">
+      <Pressable
+        onPress={() => navigation.navigate('DummyModal')}
+        style={({ pressed }) => ({
+          opacity: pressed ? 0.5 : 1,
+        })}
+      >
+        <Icon size={24} name="donut-chart-fill" />
+      </Pressable>
+      <Pressable
+        onPress={() => navigation.navigate('DummyModal')}
+        style={({ pressed }) => ({
+          opacity: pressed ? 0.5 : 1,
+        })}
+      >
+        <Icon size={24} name="star-fill" />
+      </Pressable>
+      <Pressable
+        onPress={() => navigation.navigate('DummyModal')}
+        style={({ pressed }) => ({
+          opacity: pressed ? 0.5 : 1,
+        })}
+      >
+        <Icon size={24} name="notification-4-fill" />
+      </Pressable>
+    </HStack>
+  );
+}
+
+function AccPressable() {
+  //const { initials } = useSelector((s) => s.essential.userDetails)
+  const initials = 'AK';
+  const navigation = useNavigation();
+  return (
+    // fix avatar text color to primary.700
+    <Pressable
+      onPress={() => navigation.navigate('Account')}
+      style={({ pressed }) => ({
+        opacity: pressed ? 0.5 : 1,
+      })}
+    >
+      <Avatar bg="primary.200" ml="2" size="sm" _text={{ color: 'warmGray.800' }}>
+        {initials}
+      </Avatar>
+    </Pressable>
+  );
+}
