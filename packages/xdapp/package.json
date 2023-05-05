@@ -9,7 +9,7 @@
     "web": "expo start --web"
   },
   "dependencies": {
-    "@clixpesa/native-base": "3.5.0",
+    "@clixpesa/native-base": "3.5.1",
     "@expo/vector-icons": "^13.0.0",
     "@react-navigation/bottom-tabs": "^6.5.7",
     "@react-navigation/native": "^6.1.6",
@@ -19,7 +19,8 @@
     "expo-status-bar": "~1.4.4",
     "react": "18.2.0",
     "react-dom": "^18.2.0",
-    "react-native": "0.71.6",
+    "react-native": "0.71.7",
+    "react-native-qrcode-svg": "^6.2.0",
     "react-native-remix-icon": "^0.4.0",
     "react-native-safe-area-context": "4.5.0",
     "react-native-screens": "~3.20.0",

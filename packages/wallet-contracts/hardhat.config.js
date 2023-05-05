@@ -2,11 +2,11 @@ require("@nomicfoundation/hardhat-toolbox");
 require('hardhat-deploy')
 require('hardhat-abi-exporter')
 require('@nomiclabs/hardhat-ethers')
+require('dotenv').config({path:__dirname+'/.env'})
 
-const defaultNetwork = 'localhost'
-const mnemonicPath = "m/44'/52752'/0'/0" // derivation path used by Celo
-const acc1 = ''
-const acc2 = ''
+const defaultNetwork = 'apothem_xdc'
+const mnemonicPath = "m/44'/52752'/0'/0/" 
+const {DEV_MNEMONIC, ACC1, ACC2} = process.env
 
 // This is the mnemonic used by celo-devchain
 const DEVCHAIN_MNEMONIC =
@@ -15,25 +15,32 @@ const DEVCHAIN_MNEMONIC =
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: "0.8.17",
+  defaultNetwork,
     networks: {
-    localhost: {
-      url: 'http://127.0.0.1:8545',
+    hardhat: {
       accounts: {
-        mnemonic: DEVCHAIN_MNEMONIC,
+        mnemonic: DEV_MNEMONIC,
+        path: mnemonicPath,
+        count: 5,
       },
+      forking: {
+       url: 'https://erpc.apothem.network/'
+      }
     },
-    alfajores: {
-      url: 'https://alfajores-forno.celo-testnet.org',
-      accounts: [acc1, acc2],
-      gasPrice: 100000000,
+    localhost: {
+      url: 'http://127.0.0.1:7545',
+      chainId: 31337,
+      accounts: [ACC1, ACC2],
+      gasPrice: 2500000000,
       gas: 35000000,
-      chainId: 44787,
-      loggingEnabled: true,
     },
-    alfajoresDatahub: {
-      url: 'https://celo-alfajores--rpc.datahub.figment.io/apikey/<API KEY>',
-      accounts: [acc1, acc2],
-      chainId: 44787,
+    apothem_xdc: {
+      url: 'https://erpc.apothem.network',
+      accounts: [ACC1, ACC2],
+      gasPrice: 2500000000,
+      gas: 35000000,
+      chainId: 51,
+      loggingEnabled: true,
     },
   },
   namedAccounts: {

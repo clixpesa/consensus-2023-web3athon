@@ -121,7 +121,7 @@ describe('Clixpesa P2PLoans', function () {
     await Token.approve(addr1Loan, amount)
     delay(5000)
     const allowance = await Token.allowance(addr1.address, addr1Loan)
-    expect(allowance.toString()).to.be.equal(amount)
+    expect(allowance.toString()).to.be.equal(amount) 
 
     const txResponse = await P2PLoan.FundLoan(amount)
     const txReceipt = await txResponse.wait()
