@@ -6,11 +6,14 @@
   "repository": "git@github.com:clixpesa/consensus-2023-web3athon.git",
   "author": "Kachi <kachdekan@gmail.com>, Sam <samwelmoyi@gmail.com>",
   "license": "Apache 2.0",
-  "workspaces": [
-    "packages/*"
-  ],
-  "nohoist": [
-      "**/@expo/vector-icons"
+  "workspaces": {
+    "packages": [
+      "packages/*"
     ],
+    "nohoist": [
+      "**/@expo/vector-icons"
+    ]
+  },
+  
   "private": true
 }
