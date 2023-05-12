@@ -12,7 +12,7 @@ import 'hardhat/console.sol';
 
 contract personal  { 
   
- using SafeMath for uint256;
+ using SafeMath for uint256; 
 
 using Counters for Counters.Counter;
 Counters.Counter private _id;
@@ -35,6 +35,7 @@ struct MySaving {
         COMPLETED,
         WITHDRAW
     }
+    
 
 mapping(uint256 => MySaving) savings;
 event CreateNewSavings(address owner, uint256 amt, uint indexed _id);
@@ -107,6 +108,7 @@ function withdraw(uint256 id) public authorise(id) returns(bool){
     return true;
 }
 
+// get all savings
 function getSavings(uint256 id) external view returns(MySaving memory) {
     return savings[id];
 }
