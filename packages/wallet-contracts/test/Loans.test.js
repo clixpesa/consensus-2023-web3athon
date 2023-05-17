@@ -20,7 +20,7 @@ describe('Clixpesa P2PLoans', function () {
   }
   before(async () => {
     const loansContract = await ethers.getContractFactory('Loans')
-    Token = await ethers.getContractAt(stableTokenAbi, '0x874069fa1eb16d44d622f2e0ca25eea172369bc1')
+    Token = await ethers.getContractAt(stableTokenAbi, '0x1e2913E1aC339a4996353f8F58BE0de3D109b5A5')
     const signers = await ethers.getSigners()
     addr1 = signers[0]
     addr2 = signers[1]
@@ -41,9 +41,9 @@ describe('Clixpesa P2PLoans', function () {
       id: offerID,
       lender: addr1.address,
       lenderName: 'Dekan Kachi',
-      principal: ethers.utils.parseEther('0.2').toString(),
-      minLimit: ethers.utils.parseEther('0.1').toString(),
-      maxLimit: ethers.utils.parseEther('0.2').toString(),
+      principal: ethers.utils.parseUnits('0.2', 6).toString(),
+      minLimit: ethers.utils.parseUnits('0.1', 6).toString(),
+      maxLimit: ethers.utils.parseUnits('0.2', 6).toString(),
       interest: 5 * 100,
       minDuration: 1 * 7,
       maxDuration: 2 * 7,
@@ -77,15 +77,15 @@ describe('Clixpesa P2PLoans', function () {
     const deadline = new Date(Date.now() + 604800000)
     const loanData = {
       id: 'AQ7FWWCu20dzF-BHelafw',
-      token: '0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1',
+      token: '0x1e2913E1aC339a4996353f8F58BE0de3D109b5A5',
       lender: addr1.address,
       lenderName: 'Dekan Kachi',
       borrower: addr2.address,
       borrowerName: 'Akimbo Keya',
-      principal: ethers.utils.parseEther('0.1').toString(),
+      principal: ethers.utils.parseUnits('0.1', 6).toString(),
       interest: 5 * 100,
-      balance: ethers.utils.parseEther('0').toString(),
-      paid: ethers.utils.parseEther('0').toString(),
+      balance: ethers.utils.parseUnits('0', 6).toString(),
+      paid: ethers.utils.parseUnits('0', 6).toString(),
       minDuration: 7,
       maxDuration: 14,
       deadline: Date.parse(deadline.toDateString() + ' 11:59 pm'),
@@ -112,15 +112,16 @@ describe('Clixpesa P2PLoans', function () {
     const results = await P2PLoan.getLoanDetails()
     expect(results.lender).to.be.equal(addr1.address)
     expect(results.borrower).to.be.equal(addr2.address)
-    expect(ethers.utils.formatUnits(results.principal, 'ether')).to.be.equal('0.1')
+    expect(ethers.utils.formatUnits(results.principal, 6)).to.be.equal('0.1')
   })
 
   it('Should fund loan and credit borrower', async function () {
     const amount = ethers.utils.parseEther('0.1').toString()
-    const balance2 = await Token.balanceOf(addr2.address)
-    await Token.approve(addr1Loan, amount)
+    const balance2 = await Token.balanceOf(addr2.address.replace('0x', 'xdc'))
+    console.log('Borrowers Bal: ' + balance2.toString())
+    await Token.approve(addr1Loan.replace('0x', 'xdc'), amount)
     delay(5000)
-    const allowance = await Token.allowance(addr1.address, addr1Loan)
+    const allowance = await Token.allowance(addr1.address.replace('0x', 'xdc'), addr1Loan.replace('0x', 'xdc'))
     expect(allowance.toString()).to.be.equal(amount) 
 
     const txResponse = await P2PLoan.FundLoan(amount)
@@ -129,7 +130,7 @@ describe('Clixpesa P2PLoans', function () {
     const results = P2PLoanIface.parseLog({ data: thisLog.data, topics: thisLog.topics })
     expect(results.args[2].toString()).to.be.equal(amount)
     delay(3000)
-    const newBalance2 = await Token.balanceOf(addr2.address)
+    const newBalance2 = await Token.balanceOf(addr2.address.replace('0x', 'xdc'))
     console.log('Borrowers NewBal: ' + newBalance2.toString())
     expect(newBalance2.toString() * 1).to.be.greaterThan(balance2.toString() * 1)
 

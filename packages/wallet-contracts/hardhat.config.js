@@ -16,7 +16,7 @@ const DEVCHAIN_MNEMONIC =
 module.exports = {
   solidity: "0.8.17",
   defaultNetwork,
-    networks: {
+  networks: {
     hardhat: {
       accounts: {
         mnemonic: DEV_MNEMONIC,
