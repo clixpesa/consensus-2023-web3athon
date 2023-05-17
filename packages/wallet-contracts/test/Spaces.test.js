@@ -10,7 +10,7 @@ describe('Clixpesa Spaces', function () {
 
   before(async () => {
     const spacesContract = await ethers.getContractFactory('Spaces')
-    Token = await ethers.getContractAt(stableTokenAbi, '0x874069fa1eb16d44d622f2e0ca25eea172369bc1')
+    Token = await ethers.getContractAt(stableTokenAbi, '0x1e2913E1aC339a4996353f8F58BE0de3D109b5A5')
     const signers = await ethers.getSigners()
     addr1 = signers[0]
     addr2 = signers[1]
@@ -24,12 +24,12 @@ describe('Clixpesa Spaces', function () {
 
   it('Should create a rosca named Wajackoyas', async function () {
     const roscaDetails = {
-      token: '0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1',
+      token: '0x1e2913E1aC339a4996353f8F58BE0de3D109b5A5',
       roscaName: 'Wajackoyas',
       imgLink: 'bit.ly/hthfdrer',
       authCode: 'gh23r6es',
-      goalAmount: ethers.utils.parseEther('0.2').toString(),
-      ctbAmount: ethers.utils.parseEther('0.1').toString(),
+      goalAmount: ethers.utils.parseUnits('0.2', 6).toString(),
+      ctbAmount: ethers.utils.parseEther('0.1', 6).toString(),
       ctbDay: 'Sunday',
       ctbOccurence: 'Weekly',
       disbDay: 'Monday',
@@ -49,14 +49,14 @@ describe('Clixpesa Spaces', function () {
     delay(5000)
     const authCode = 'gh23r6es'
     await Rosca.connect(addr2).joinRosca(authCode)
-    delay(3000)
+    delay(8000)
     const members = await Rosca.getMembers()
     const address = members.find((el) => el === addr2.address)
     expect(address).to.be.equal(addr2.address)
   })
 
   it('Members should fund round', async function () {
-    const ctbAmount = ethers.utils.parseEther('0.1').toString()
+    const ctbAmount = ethers.utils.parseUnits('0.1', 6).toString()
     const roscaBal = await Token.balanceOf(Rosca.address)
     await Token.approve(Rosca.address, ctbAmount)
     await delay(5000)
@@ -77,7 +77,11 @@ describe('Clixpesa Spaces', function () {
 
   it('Should payout dueMember', async function () {
     const balance = await Token.balanceOf(addr1.address)
-    await Rosca.withdrawFunds()
+    const RoscaBalance = await Token.balanceOf(Rosca.address)
+    delay(5000)
+    console.log(RoscaBalance.toString())
+    const resp = await Rosca.withdrawFunds()
+    console.log(await resp.wait())
     delay(5000)
     const newBalance = await Token.balanceOf(addr1.address)
     expect(newBalance).to.be.greaterThan(balance)
