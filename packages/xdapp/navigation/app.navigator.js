@@ -1,14 +1,45 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Icon from 'react-native-remix-icon';
 import { Box, Text, Avatar, Pressable, HStack } from '@clixpesa/native-base';
 import { useNavigation } from '@react-navigation/native';
 
-import { HomeScreen } from '../features/essentials';
 import { SpacesNavigator } from './spaces.navigator';
 import { LoansNavigator } from './loans.navigator';
 import { AccountNavigator } from './account.navigator';
 
+import { HomeScreen, DepositScreen } from '../features/essentials';
+
 const Tab = createBottomTabNavigator();
+const AppStack = createNativeStackNavigator();
+
+export const AppNavigator = () => {
+  return (
+    <AppStack.Navigator>
+      <AppStack.Screen
+        name="Main"
+        component={BottomTabNavigator}
+        options={{ headerShown: false }}
+      />
+      {/* Home modals*/}
+      <AppStack.Group screenOptions={{ presentation: 'modal' }}>
+        <AppStack.Screen name="depositFunds" component={DepositScreen} />
+      </AppStack.Group>
+      {/* Spaces modals*/}
+    </AppStack.Navigator>
+  );
+};
+
+const BottomTabNavigator = () => {
+  return (
+    <Tab.Navigator screenOptions={screenOptions}>
+      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Spaces" component={SpacesNavigator} />
+      <Tab.Screen name="Loans" component={LoansNavigator} />
+      <Tab.Screen name="Account" component={AccountNavigator} />
+    </Tab.Navigator>
+  );
+};
 
 const TAB_ICON = {
   Home: ['home-3-fill', 'home-3-line'],
@@ -18,6 +49,7 @@ const TAB_ICON = {
 };
 
 const screenOptions = ({ route }) => {
+  console.log(route.name);
   const iconName = TAB_ICON[route.name];
   return {
     tabBarIcon: ({ focused }) => (
@@ -34,17 +66,6 @@ const screenOptions = ({ route }) => {
     headerLeft: () => <AccPressable />,
     headerRight: () => <HeaderRightIcons />,
   };
-};
-
-export const AppNavigator = () => {
-  return (
-    <Tab.Navigator screenOptions={screenOptions}>
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Spaces" component={SpacesNavigator} />
-      <Tab.Screen name="Loans" component={LoansNavigator} />
-      <Tab.Screen name="Account" component={AccountNavigator} />
-    </Tab.Navigator>
-  );
 };
 
 function HeaderRightIcons() {

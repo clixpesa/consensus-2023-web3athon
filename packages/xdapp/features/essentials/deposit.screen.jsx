@@ -14,24 +14,32 @@ import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function DepositScreen() {
-  const walletAddress = '0xTHISAMPLE0000000000000000000'; //useSelector((s) => s.wallet.walletInfo.address);
+  const walletAddress = '0xb8C193E387bDc000777EE167e54f79BD626807B3'; //useSelector((s) => s.wallet.walletInfo.address);
   return (
-    <Box flex={1} bg="primary.50" alignItems="center">
-      <VStack width="95%" bg="white" mt={3} rounded="2xl">
-        <Box alignSelf="center" py={6}>
-          <QRCode value={walletAddress} width="95%" />
-          <Text mt={3} alignSelf="center" fontWeight="medium">
-            $Akimbo6856
+    <Box flex={1} bg="muted.50" alignItems="center">
+      <Pressable>
+        <HStack alignItems="center" m={2}>
+          <Text fontWeight="medium" fontSize="lg" mr={1}>
+            Deposit USXD
           </Text>
-        </Box>
+          <Icon as={Ionicons} name="caret-down-outline" size="sm" color="text.400" />
+        </HStack>
+      </Pressable>
+      <Box alignSelf="center" alignItems="center" p={3} bg="white" minW="40%" rounded={16}>
+        <QRCode value={walletAddress} size={150} />
+        <Text mt={2} alignSelf="center" fontWeight="medium">
+          $Akimbo6856
+        </Text>
+      </Box>
+      <VStack width="95%" bg="white" mt={3} rounded="2xl">
         <Divider width="85%" alignSelf="center" />
         <HStack p={3} justifyContent="space-between" justifyItems="center">
           <Box width="70%">
             <Text color="text.600">Wallet Address</Text>
             <Text fontWeight="medium">{walletAddress}</Text>
           </Box>
-          <Pressable p={3}>
-            <Icon as={Ionicons} name="ios-copy" size="lg" color="text.400" />
+          <Pressable p={3} mt={4}>
+            <Icon as={Ionicons} name="ios-copy-outline" size="lg" color="text.400" />
           </Pressable>
         </HStack>
         <HStack p={3} justifyContent="space-between" justifyItems="center">
