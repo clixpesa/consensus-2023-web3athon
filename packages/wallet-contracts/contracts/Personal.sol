@@ -1,134 +1,201 @@
 // SPDX-License-Identifier: Apache 2.0
 pragma solidity ^0.8.7;
-
-// Importing OpenZeppelin's SafeMath Implementation
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./utils.sol";
-import "hardhat/console.sol";
+
+struct SpaceDetails {
+    IERC20 token;
+    address payable owner;
+    string spaceName;
+    string imgLink;
+    string spaceId;
+    uint256 goalAmount;
+    uint256 deadline;
+}
 
 contract Personal {
     using SafeMath for uint256;
 
-    using Counters for Counters.Counter;
-    Counters.Counter private _id;
-
-    struct MySaving {
-        address owner;
-        uint id;
-        string name;
-        IERC20 token;
-        uint256 goalAmount;
-        uint256 deadline;
-        uint256 balance;
-        bool exist;
-        bool goalReached;
-        CheckStatus Status;
+    struct PersonalDetails {
+        SpaceDetails SD;
+        uint256 currentBalance;
     }
 
-    enum CheckStatus {
-        CREATED,
-        COMPLETED,
-        WITHDRAW
+    //List of all Personal Spaces
+    PersonalDetails[] allPersonalSpaces;
+    mapping(string => uint256) personalSpaceIndex;
+    mapping(address => PersonalDetails[]) myPersonalSpaces;
+    mapping(address => mapping(string => uint256)) myPersonalSpaceIdx;
+
+    //Personal Space events
+    event CreatedPersonalSpace(address owner, SpaceDetails SD);
+    event FundedPersonalSpace(address funder, string spaceId, uint256 amount);
+    event WithdrawnPersonalSpace(
+        address withdrawer,
+        string spaceId,
+        uint256 amount
+    );
+    event UpdatedPersonalSpace(PersonalDetails PD);
+
+    enum PersonalState {
+        isActive,
+        isEnded,
+        isInActive,
+        isFullyFunded
     }
 
-    mapping(uint256 => MySaving) savings;
-    event CreateNewSavings(address owner, uint256 amt, uint indexed _id);
-    event Deposit(address depositor, uint256 amount);
+    constructor() {}
 
-    function createSavings(
-        string memory _name,
-        uint256 _targetAmount,
-        uint256 _deadline,
-        address _token
-    ) external {
-        require(bytes(_name).length > 0, "name of saving cannot be empty");
-        require(_targetAmount > 0, "amount must be greater than zero");
-        require(_deadline > 0, "Invalid date");
-
-        _id.increment();
-        uint256 Id = _id.current();
-        MySaving memory newSaving;
-        newSaving.owner = msg.sender;
-        newSaving.id = Id;
-        newSaving.name = _name;
-        newSaving.token = IERC20(_token);
-        newSaving.goalAmount = _targetAmount;
-        newSaving.exist = true;
-        newSaving.deadline = block.timestamp + _deadline;
-        newSaving.Status = CheckStatus.CREATED;
-
-        // map the newsaving to savings;
-        savings[Id] = newSaving;
-
-        emit CreateNewSavings(msg.sender, _targetAmount, Id);
-    }
-
-    // Function to receive Ether. msg.data must be empty
-    receive() external payable {}
-
-    function depositNew(uint256 id, uint256 _amount) external authorise(id) {
-        require(savings[id].Status == CheckStatus.CREATED, "Goal reached");
-        require(_amount > 0, "Deposit amount must be greater than zero");
+    function createPersonalSpace(SpaceDetails memory _SD) external {
+        require(msg.sender == _SD.owner, "Must be owner");
+        require(personalSpaceIndex[_SD.spaceId] == 0, "SpaceId already exists");
         require(
-            savings[id].token.balanceOf(msg.sender) >= _amount,
-            "Insufficient Funds"
+            myPersonalSpaceIdx[msg.sender][_SD.spaceId] == 0,
+            "SpaceId already exists"
         );
-        require(
-            savings[id].token.transferFrom(msg.sender, address(this), _amount),
-            "Failed to deposit"
-        );
+        require(_SD.owner != address(0), "Owner cannot be 0 address");
+        require(_SD.token != IERC20(address(0)), "Token cannot be 0 address");
+        require(bytes(_SD.spaceName).length > 0, "Name cannot be empty");
+        require(_SD.deadline > block.timestamp, "Deadline must be in future");
+        require(_SD.goalAmount > 0, "Goal must be greater than 0");
 
-        savings[id].balance = savings[id].balance.add(_amount);
-        if (savings[id].balance == savings[id].goalAmount) {
-            savings[id].Status = CheckStatus.COMPLETED;
+        PersonalDetails memory _PD = PersonalDetails(_SD, 0);
+
+        allPersonalSpaces.push(_PD);
+        personalSpaceIndex[_SD.spaceId] = allPersonalSpaces.length;
+        myPersonalSpaces[msg.sender].push(_PD);
+        myPersonalSpaceIdx[msg.sender][_SD.spaceId] = myPersonalSpaces[
+            msg.sender
+        ].length;
+        emit CreatedPersonalSpace(msg.sender, _SD);
+    }
+
+    function getAllPersonalSpaces()
+        external
+        view
+        returns (PersonalDetails[] memory)
+    {
+        return allPersonalSpaces;
+    }
+
+    function getPersonalSpaceById(
+        string memory _spaceId
+    ) external view returns (PersonalDetails memory) {
+        return allPersonalSpaces[personalSpaceIndex[_spaceId].sub(1)];
+    }
+
+    function getPersonalSpacesByOwner(
+        address _owner
+    ) external view returns (PersonalDetails[] memory) {
+        return myPersonalSpaces[_owner];
+    }
+
+    function getMyPersonalSpaces()
+        external
+        view
+        returns (PersonalDetails[] memory)
+    {
+        return myPersonalSpaces[msg.sender];
+    }
+
+    function doesPersonalSpaceExist(
+        address owner,
+        string memory _spaceId
+    ) external view returns (bool isExistent) {
+        if (personalSpaceIndex[_spaceId] == 0) {
+            return false;
         }
-        emit Deposit(msg.sender, _amount);
+        if (myPersonalSpaceIdx[owner][_spaceId] == 0) {
+            return false;
+        }
     }
 
-    // function checkAllownce(uint id) external view returns(uint){
-    //    return savings[id].token.allowance(msg.sender, address(this));
-    // }
-    modifier authorise(uint256 id) {
+    function updatePersonalSpace(SpaceDetails memory _SD) external {
+        require(msg.sender == _SD.owner, "Must be owner");
+        require(personalSpaceIndex[_SD.spaceId] != 0, "SpaceId does not exist");
         require(
-            savings[id].owner == msg.sender,
-            "Savings does not exist or not authorized"
+            myPersonalSpaceIdx[msg.sender][_SD.spaceId] != 0,
+            "SpaceId does not exist"
         );
-        _;
+        require(_SD.owner != address(0), "Owner cannot be 0 address");
+        require(_SD.token != IERC20(address(0)), "Token cannot be 0 address");
+        require(bytes(_SD.spaceName).length > 0, "Name cannot be empty");
+        require(_SD.deadline > block.timestamp, "Deadline must be in future");
+        require(_SD.goalAmount > 0, "Goal must be greater than 0");
+
+        uint256 balance = allPersonalSpaces[
+            personalSpaceIndex[_SD.spaceId].sub(1)
+        ].currentBalance;
+
+        PersonalDetails memory _PD = PersonalDetails(_SD, balance);
+        allPersonalSpaces[personalSpaceIndex[_SD.spaceId].sub(1)] = _PD;
+        myPersonalSpaces[msg.sender][
+            myPersonalSpaceIdx[msg.sender][_SD.spaceId].sub(1)
+        ] = _PD;
+
+        emit UpdatedPersonalSpace(
+            allPersonalSpaces[personalSpaceIndex[_SD.spaceId].sub(1)]
+        );
     }
 
-    // function approve(uint256 id, uint256 _amount ) external authorise(id) {]
-    //         savings[id].token.approve(address(this), _amount);
-    //         savings[id].token.allowance(msg.sender, address(this)) ;
-
-    // }
-
-    function withdraw(uint256 id) public authorise(id) returns (bool) {
+    function fundPersonalSpace(
+        string memory _spaceId,
+        uint256 _amount
+    ) external {
+        require(personalSpaceIndex[_spaceId] != 0, "SpaceId does not exist");
         require(
-            savings[id].Status == CheckStatus.COMPLETED,
-            "Savings not yet completed"
+            myPersonalSpaceIdx[msg.sender][_spaceId] != 0,
+            "SpaceId does not exist"
         );
+        PersonalDetails memory _PD = allPersonalSpaces[
+            personalSpaceIndex[_spaceId].sub(1)
+        ];
         require(
-            savings[id].token.balanceOf(msg.sender) > 0,
-            "Insufficient Funds"
+            _PD.SD.deadline > block.timestamp,
+            "Deadline must be in future"
         );
+        require(_PD.SD.goalAmount > 0, "Goal must be greater than 0");
+        require(_amount > 0, "Amount must be greater than 0");
         require(
-            savings[id].token.transfer(msg.sender, savings[id].balance),
-            "Payment failed"
+            _PD.SD.token.transferFrom(msg.sender, address(this), _amount),
+            "Transfer failed"
         );
+        //_PD.token.transferFrom(msg.sender, address(this), _amount);
+        allPersonalSpaces[personalSpaceIndex[_spaceId].sub(1)]
+            .currentBalance = _PD.currentBalance.add(_amount);
+        myPersonalSpaces[msg.sender][
+            myPersonalSpaceIdx[msg.sender][_spaceId].sub(1)
+        ].currentBalance = _PD.currentBalance.add(_amount);
 
-        savings[id].Status == CheckStatus.WITHDRAW;
-        savings[id].goalReached = true;
-        savings[id].balance = 0;
-        return true;
+        emit FundedPersonalSpace(msg.sender, _spaceId, _amount);
     }
 
-    function getSavings(uint256 id) external view returns (MySaving memory) {
-        return savings[id];
-    }
+    function withdrawFromPersonalSpace(
+        string memory _spaceId,
+        uint256 _amount
+    ) external {
+        require(personalSpaceIndex[_spaceId] != 0, "SpaceId does not exist");
+        require(
+            myPersonalSpaceIdx[msg.sender][_spaceId] != 0,
+            "SpaceId does not exist"
+        );
+        PersonalDetails memory _PD = allPersonalSpaces[
+            personalSpaceIndex[_spaceId].sub(1)
+        ];
+        require(_PD.SD.owner == msg.sender, "Must be owner");
+        require(_PD.SD.goalAmount > 0, "Goal must be greater than 0");
+        require(_amount > 0, "Amount must be greater than 0");
+        require(
+            _PD.currentBalance >= _amount,
+            "Amount must be less than current balance"
+        );
+        require(_PD.SD.token.transfer(msg.sender, _amount), "Transfer failed");
+        allPersonalSpaces[personalSpaceIndex[_spaceId].sub(1)]
+            .currentBalance = _PD.currentBalance.sub(_amount);
+        myPersonalSpaces[msg.sender][
+            myPersonalSpaceIdx[msg.sender][_spaceId].sub(1)
+        ].currentBalance = _PD.currentBalance.sub(_amount);
 
-    function balance(uint id) public view returns (uint) {
-        return savings[id].token.balanceOf(msg.sender);
+        emit WithdrawnPersonalSpace(msg.sender, _spaceId, _amount);
     }
 }
