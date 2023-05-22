@@ -17,8 +17,24 @@ struct SpaceDetails {
 contract Personal {
     using SafeMathUpgradeable for uint256;
 
+    enum FundsState {
+        isFundable,
+        isFullyFunded
+    }
+    enum ActivityState {
+        isActive,
+        isInActive
+    }
+
+    //Personal Space Structs
+    struct SpaceStates {
+        FundsState currentFundState;
+        ActivityState currentActivityState;
+    }
+
     struct PersonalDetails {
         SpaceDetails SD;
+        SpaceStates SS;
         uint256 currentBalance;
     }
 
@@ -37,13 +53,8 @@ contract Personal {
         uint256 amount
     );
     event UpdatedPersonalSpace(PersonalDetails PD);
-
-    enum PersonalState {
-        isActive,
-        isEnded,
-        isInActive,
-        isFullyFunded
-    }
+    event ClosedPersonalSpace(address owner, string spaceId);
+    event DeletedPersonalSpace(address owner, string spaceId);
 
    
 
@@ -60,7 +71,14 @@ contract Personal {
         require(_SD.deadline > block.timestamp, "Deadline must be in future");
         require(_SD.goalAmount > 0, "Goal must be greater than 0");
 
-        PersonalDetails memory _PD = PersonalDetails(_SD, 0);
+        SpaceStates memory _SS = SpaceStates(
+            FundsState.isFundable,
+            ActivityState.isActive
+        );
+
+        uint256 _currentBalance = 0;
+
+        PersonalDetails memory _PD = PersonalDetails(_SD, _SS, _currentBalance);
 
         allPersonalSpaces.push(_PD);
         personalSpaceIndex[_SD.spaceId] = allPersonalSpaces.length;
@@ -68,6 +86,7 @@ contract Personal {
         myPersonalSpaceIdx[msg.sender][_SD.spaceId] = myPersonalSpaces[
             msg.sender
         ].length;
+
         emit CreatedPersonalSpace(msg.sender, _SD);
     }
 
@@ -82,6 +101,7 @@ contract Personal {
     function getPersonalSpaceById(
         string memory _spaceId
     ) external view returns (PersonalDetails memory) {
+        require(personalSpaceIndex[_spaceId] != 0, "Space does not exist");
         return allPersonalSpaces[personalSpaceIndex[_spaceId].sub(1)];
     }
 
@@ -124,11 +144,15 @@ contract Personal {
         require(_SD.deadline > block.timestamp, "Deadline must be in future");
         require(_SD.goalAmount > 0, "Goal must be greater than 0");
 
-        uint256 balance = allPersonalSpaces[
+        uint256 _balance = allPersonalSpaces[
             personalSpaceIndex[_SD.spaceId].sub(1)
         ].currentBalance;
 
-        PersonalDetails memory _PD = PersonalDetails(_SD, balance);
+        SpaceStates memory _CS = allPersonalSpaces[
+            personalSpaceIndex[_SD.spaceId].sub(1)
+        ].SS;
+
+        PersonalDetails memory _PD = PersonalDetails(_SD, _CS, _balance);
         allPersonalSpaces[personalSpaceIndex[_SD.spaceId].sub(1)] = _PD;
         myPersonalSpaces[msg.sender][
             myPersonalSpaceIdx[msg.sender][_SD.spaceId].sub(1)
@@ -152,6 +176,14 @@ contract Personal {
             personalSpaceIndex[_spaceId].sub(1)
         ];
         require(
+            _PD.SS.currentFundState == FundsState.isFundable,
+            "Funding is not allowed / Fully funded"
+        );
+        require(
+            _PD.SS.currentActivityState == ActivityState.isActive,
+            "Space should be active"
+        );
+        require(
             _PD.SD.deadline > block.timestamp,
             "Deadline must be in future"
         );
@@ -169,6 +201,20 @@ contract Personal {
         ].currentBalance = _PD.currentBalance.add(_amount);
 
         emit FundedPersonalSpace(msg.sender, _spaceId, _amount);
+
+        //check if current balance is greater than goal amount and change state
+        if (
+            allPersonalSpaces[personalSpaceIndex[_spaceId].sub(1)]
+                .currentBalance >=
+            allPersonalSpaces[personalSpaceIndex[_spaceId].sub(1)].SD.goalAmount
+        ) {
+            allPersonalSpaces[personalSpaceIndex[_spaceId].sub(1)]
+                .SS
+                .currentFundState = FundsState.isFullyFunded;
+            myPersonalSpaces[msg.sender][
+                myPersonalSpaceIdx[msg.sender][_spaceId].sub(1)
+            ].SS.currentFundState = FundsState.isFullyFunded;
+        }
     }
 
     function withdrawFromPersonalSpace(
@@ -184,6 +230,10 @@ contract Personal {
             personalSpaceIndex[_spaceId].sub(1)
         ];
         require(_PD.SD.owner == msg.sender, "Must be owner");
+        require(
+            _PD.SS.currentActivityState == ActivityState.isActive,
+            "Space must be active"
+        );
         require(_PD.SD.goalAmount > 0, "Goal must be greater than 0");
         require(_amount > 0, "Amount must be greater than 0");
         require(
@@ -199,6 +249,22 @@ contract Personal {
 
         
         emit WithdrawnPersonalSpace(msg.sender, _spaceId, _amount);
+
+        //check if current balance is less than goal amount and change state
+        if (
+            allPersonalSpaces[personalSpaceIndex[_spaceId].sub(1)]
+                .currentBalance <
+            allPersonalSpaces[personalSpaceIndex[_spaceId].sub(1)].SD.goalAmount
+        ) {
+            allPersonalSpaces[personalSpaceIndex[_spaceId].sub(1)]
+                .SS = SpaceStates(
+                FundsState.isFundable,
+                ActivityState.isActive
+            );
+            myPersonalSpaces[msg.sender][
+                myPersonalSpaceIdx[msg.sender][_spaceId].sub(1)
+            ].SS = SpaceStates(FundsState.isFundable, ActivityState.isActive);
+        }
     }
 
    function deletePersonalSpace(string memory _spaceId) external {
