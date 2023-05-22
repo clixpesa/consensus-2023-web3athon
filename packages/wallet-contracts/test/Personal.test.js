@@ -56,6 +56,7 @@ describe('Clixpesa Personal Spaces', function () {
     const txReceipt = await txResponse.wait()
     const thisLog = txReceipt.logs.find((el) => el.address === Personal.address)
     const results = PersonalIface.parseLog({ data: thisLog.data, topics: thisLog.topics })
+    // console.log("results ================>>>>> ", results)
     expect(results.args[1][1]).to.be.equal(addr2.address)
   })
 
@@ -144,8 +145,30 @@ describe('Clixpesa Personal Spaces', function () {
     const personalSpaces2 = await Personal.getPersonalSpacesByOwner(addr2.address)
     expect(thisPersonalSpaceBal).to.be.equal(personalSpaces2[0][1])
   })
-
-  
+  it('Should delete the ADD1 personal space', async function () {
+      const amount = ethers.utils.parseUnits('0.5', 6);
+      const spaceBal = await Token.balanceOf(Personal.address);
+      const userBal = await Token.balanceOf(addr1.address);
+      const personalSpaces = await Personal.getPersonalSpacesByOwner(addr1.address);
+    
+      // Verify that personalSpaces array has at least one element
+      expect(personalSpaces.length).to.be.greaterThan(0);
+    
+      const thisPersonalSpaceBal = personalSpaces[0].currentBalance;
+      const txResponse = await Personal.deletePersonalSpace(personalSpaces[0].spaceId);
+      const txReceipt = await txResponse.wait();
+    
+      // Check transaction status or events emitted to ensure successful withdrawal
+    
+      const results = PersonalIface.parseLog({ data: thisLog.data, topics: thisLog.topics });
+      expect(results.args[2]).to.be.equal(0);
+    
+      // Compare balances using sub and add functions
+      expect(spaceBal.sub(amount)).to.revertedWith(await Token.balanceOf(Personal.address));
+      const personalSpaces2 = await Personal.getPersonalSpacesByOwner(addr1.address);
+      expect(thisPersonalSpaceBal.sub(amount)).to.be.equal(0);
+      expect(userBal.add(amount)).to.be.equal(await Token.balanceOf(address(0)));
+    });
 
 
 })

@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: Apache 2.0
 pragma solidity ^0.8.7;
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+
 
 struct SpaceDetails {
-    IERC20 token;
+    IERC20Upgradeable token;
     address payable owner;
     string spaceName;
     string imgLink;
@@ -14,7 +15,7 @@ struct SpaceDetails {
 }
 
 contract Personal {
-    using SafeMath for uint256;
+    using SafeMathUpgradeable for uint256;
 
     struct PersonalDetails {
         SpaceDetails SD;
@@ -44,7 +45,7 @@ contract Personal {
         isFullyFunded
     }
 
-    constructor() {}
+   
 
     function createPersonalSpace(SpaceDetails memory _SD) external {
         require(msg.sender == _SD.owner, "Must be owner");
@@ -54,7 +55,7 @@ contract Personal {
             "SpaceId already exists"
         );
         require(_SD.owner != address(0), "Owner cannot be 0 address");
-        require(_SD.token != IERC20(address(0)), "Token cannot be 0 address");
+        require(_SD.token != IERC20Upgradeable(address(0)), "Token cannot be 0 address");
         require(bytes(_SD.spaceName).length > 0, "Name cannot be empty");
         require(_SD.deadline > block.timestamp, "Deadline must be in future");
         require(_SD.goalAmount > 0, "Goal must be greater than 0");
@@ -118,7 +119,7 @@ contract Personal {
             "SpaceId does not exist"
         );
         require(_SD.owner != address(0), "Owner cannot be 0 address");
-        require(_SD.token != IERC20(address(0)), "Token cannot be 0 address");
+        require(_SD.token != IERC20Upgradeable(address(0)), "Token cannot be 0 address");
         require(bytes(_SD.spaceName).length > 0, "Name cannot be empty");
         require(_SD.deadline > block.timestamp, "Deadline must be in future");
         require(_SD.goalAmount > 0, "Goal must be greater than 0");
@@ -196,6 +197,33 @@ contract Personal {
             myPersonalSpaceIdx[msg.sender][_spaceId].sub(1)
         ].currentBalance = _PD.currentBalance.sub(_amount);
 
+        
         emit WithdrawnPersonalSpace(msg.sender, _spaceId, _amount);
     }
+
+   function deletePersonalSpace(string memory _spaceId) external {
+    require(personalSpaceIndex[_spaceId] != 0, "SpaceId does not exist");
+    require(myPersonalSpaceIdx[msg.sender][_spaceId] != 0, "SpaceId does not exist");
+
+    PersonalDetails memory _PD = allPersonalSpaces[personalSpaceIndex[_spaceId].sub(1)];
+    require(_PD.SD.owner == msg.sender, "Must be owner");
+    require(_PD.currentBalance >= _PD.SD.goalAmount, "Goal not reached");
+
+    // Transfer the remaining balance to the owner
+    if (_PD.currentBalance > 0) {
+        require(_PD.SD.token.transfer(msg.sender, _PD.currentBalance), "Transfer failed");
+    }
+
+    // Delete the personal space
+    uint256 index = personalSpaceIndex[_spaceId].sub(1);
+    delete allPersonalSpaces[index];
+    delete personalSpaceIndex[_spaceId];
+
+    // Delete from owner's personal spaces
+    uint256 ownerIndex = myPersonalSpaceIdx[msg.sender][_spaceId].sub(1);
+    delete myPersonalSpaces[msg.sender][ownerIndex];
+    delete myPersonalSpaceIdx[msg.sender][_spaceId];
+}
+
+        
 }
