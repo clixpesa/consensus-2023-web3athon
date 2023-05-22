@@ -52,6 +52,8 @@ contract Personal {
         uint256 amount
     );
     event UpdatedPersonalSpace(PersonalDetails PD);
+    event ClosedPersonalSpace(address owner, string spaceId);
+    event DeletedPersonalSpace(address owner, string spaceId);
 
     constructor() {}
 
@@ -98,6 +100,7 @@ contract Personal {
     function getPersonalSpaceById(
         string memory _spaceId
     ) external view returns (PersonalDetails memory) {
+        require(personalSpaceIndex[_spaceId] != 0, "Space does not exist");
         return allPersonalSpaces[personalSpaceIndex[_spaceId].sub(1)];
     }
 

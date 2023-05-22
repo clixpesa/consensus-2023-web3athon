@@ -147,7 +147,42 @@ describe('Clixpesa Personal Spaces', function () {
     expect(thisPersonalSpaceBal).to.be.equal(personalSpaces2[0].currentBalance)
   })
 
-  
+  it('Should fully fund ADD2 personal space', async function () {
+    const spaceBal = await Token.balanceOf(Personal.address)
+    const personalSpaces = await Personal.getPersonalSpacesByOwner(addr2.address)
+    const thisPersonalSpaceBal = personalSpaces[0].currentBalance 
+    const amount = personalSpaces[0].SD.goalAmount
+    await Token.connect(addr2).approve(Personal.address, amount)
+    delay(5000)
+    const txResponse = await Personal.connect(addr2).fundPersonalSpace(personalSpaces[0].SD.spaceId, amount)
+    const txReceipt = await txResponse.wait()
+    const thisLog = txReceipt.logs.find((el) => el.address === Personal.address)
+    const results = PersonalIface.parseLog({ data: thisLog.data, topics: thisLog.topics })
+    expect(results.args.amount).to.be.equal(amount.toString())
+    expect(spaceBal.add(amount)).to.be.equal(await Token.balanceOf(Personal.address))
+    const personalSpaces2 = await Personal.getPersonalSpacesByOwner(addr2.address)
+    expect(thisPersonalSpaceBal.add(amount)).to.be.equal(personalSpaces2[0].currentBalance)
+    expect(personalSpaces2[0].SS.currentFundState).to.be.equal(1)
+  })
+ 
+  it('Should close ADD2 personal space and withdraw all funds', async function () {
+    const personalSpaces = await Personal.getPersonalSpacesByOwner(addr2.address)
+    const thisPersonalSpaceBal = personalSpaces[0].currentBalance
+    const userBal = await Token.balanceOf(addr2.address)
+    const spaceBal = await Token.balanceOf(Personal.address)
+    const txResponse = await Personal.connect(addr2).closePersonalSpace(personalSpaces[0].SD.spaceId)
+    const txReceipt = await txResponse.wait()
+    const thisLog = txReceipt.logs.find((el) => el.address === Personal.address)
+    const results = PersonalIface.parseLog({ data: thisLog.data, topics: thisLog.topics }) 
+    expect(results.args.spaceId).to.be.equal(personalSpaces[0].SD.spaceId)
+    const personalSpaces2 = await Personal.getPersonalSpacesByOwner(addr2.address)
+    expect(personalSpaces2[0].currentBalance).to.be.equal(0)
+    expect(personalSpaces2[0].SS.currentActivityState).to.be.equal(1)
+    expect(userBal.add(thisPersonalSpaceBal)).to.be.equal(await Token.balanceOf(addr2.address))
+    expect(spaceBal.sub(thisPersonalSpaceBal)).to.be.equal(await Token.balanceOf(Personal.address))
+    //check if timeOfClosure is LESS than deadline
+    //expect(personalSpaces2[0].SS.timeOfClosure).to.be.lessThan(personalSpaces2[0].SD.deadline)
 
+  })
 
 })
