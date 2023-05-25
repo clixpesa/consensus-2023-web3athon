@@ -134,7 +134,11 @@ contract P2PLoans {
         );
 
         /// @dev update user's loan lists
-        _updateLoanLists(_thisRequest.initiator, msg.sender, _loanId);
+        _updateLoanListsFromRequest(
+            _thisRequest.initiator,
+            msg.sender,
+            _loanId
+        );
 
         emit CreatedP2PLoan(
             msg.sender,
@@ -238,11 +242,58 @@ contract P2PLoans {
         );
 
         allOffers.push(OLD);
-        myOffers[msg.sender].push();
+        myOffers[msg.sender].push(OLD);
         myOfferIdx[msg.sender][OLD.LD.loanId] = myOffers[msg.sender].length;
         offerIndex[OLD.LD.loanId] = allOffers.length;
 
         emit CreatedLoanOffer(msg.sender, OLD);
+    }
+
+    /// @notice Borrow from a loan offer
+    /// @param _offerId Offer ID
+    /// @param _loanId Loan ID
+    /// @param _amount Amount to borrow
+    /// @param _duration Duration of loan
+    function borrowFromOffer(
+        string memory _offerId,
+        string memory _loanId,
+        uint256 _amount,
+        uint256 _duration
+    ) external {
+        require(offerIndex[_offerId] != 0, "!Offer");
+        OfferLoanDetails memory _thisOffer = allOffers[
+            offerIndex[_offerId].sub(1)
+        ];
+        require(_thisOffer.LD.initiator != msg.sender, "!Self");
+        require(
+            _amount >= allOffers[offerIndex[_offerId].sub(1)].minLoanAmount &&
+                _amount <= allOffers[offerIndex[_offerId].sub(1)].maxLoanAmount,
+            "!Amount"
+        );
+        require(
+            _duration >=
+                allOffers[offerIndex[_offerId].sub(1)].LD.minDuration &&
+                _duration <=
+                allOffers[offerIndex[_offerId].sub(1)].LD.maxDuration,
+            "!Duration"
+        );
+
+        console.log(">> Yes, this offer: %s", _thisOffer.LD.loanId);
+
+        /// @dev prepare the loan details and change offerId with LoanId
+        _updateLoanListsFromOffer(
+            msg.sender,
+            allOffers[offerIndex[_offerId].sub(1)].LD.initiator,
+            _amount,
+            _duration,
+            _offerId,
+            _loanId
+        );
+
+        emit CreatedP2PLoan(
+            msg.sender,
+            allP2PLoans[p2pLoanIndex[_loanId].sub(1)]
+        );
     }
 
     /*
@@ -279,8 +330,8 @@ contract P2PLoans {
     } */
 
     /// @notice Utility functions
-    /// @dev Update user's lists
-    function _updateLoanLists(
+    /// @dev Update user's lists from a request
+    function _updateLoanListsFromRequest(
         address _borrower,
         address _lender,
         string memory _loanId
@@ -332,6 +383,82 @@ contract P2PLoans {
             myRequests[_borrower].pop();
         } else if (offerIndex[_loanId] != 0) {
             console.log(">> Upadating Loans List from an Offer");
+        }
+    }
+
+    /// @dev Update user's lists from am offer
+    function _updateLoanListsFromOffer(
+        address _borrower,
+        address _lender,
+        uint256 _amount,
+        uint256 _duration,
+        string memory _offerId,
+        string memory _loanId
+    ) internal {
+        if (offerIndex[_offerId] != 0) {
+            console.log(">> Upadating Loans List from an Offer");
+            LoanDetails memory _thisOfferLD = allOffers[
+                offerIndex[_offerId].sub(1)
+            ].LD;
+            _thisOfferLD.loanId = _loanId;
+            _thisOfferLD.principal = _amount;
+            //Push to allP2PLoans and update index
+            allP2PLoans.push(
+                P2PLoanDetails(
+                    _thisOfferLD,
+                    LoanParticipants(payable(_borrower), payable(_lender)),
+                    LoanState.isPending,
+                    _amount,
+                    block.timestamp.add(_duration)
+                )
+            );
+            p2pLoanIndex[_loanId] = allP2PLoans.length;
+
+            //Push to lender's myP2PLoans and update index
+            myP2PLoans[_lender].push(allP2PLoans[allP2PLoans.length.sub(1)]);
+            myP2PLoanIdx[_lender][_loanId] = myP2PLoans[_lender].length;
+
+            //Push to borrower's myP2PLoans and update index
+            myP2PLoans[_borrower].push(allP2PLoans[allP2PLoans.length.sub(1)]);
+            myP2PLoanIdx[_borrower][_loanId] = myP2PLoans[_borrower].length;
+
+            /// @dev Update user's offer pool
+            allOffers[offerIndex[_offerId].sub(1)].LD.principal = allOffers[
+                offerIndex[_offerId].sub(1)
+            ].LD.principal.sub(_amount);
+            myOffers[_lender][myOfferIdx[_lender][_offerId].sub(1)]
+                .LD
+                .principal = myOffers[_lender][
+                myOfferIdx[_lender][_offerId].sub(1)
+            ].LD.principal.sub(_amount);
+
+            /// @dev Update user's offer lists if pool is low
+            /// @dev Remove offer from allOffers and update index if pool is low
+            if (
+                allOffers[offerIndex[_offerId].sub(1)].LD.principal <
+                allOffers[offerIndex[_offerId].sub(1)].minLoanAmount
+            ) {
+                allOffers[offerIndex[_offerId].sub(1)] = allOffers[
+                    allOffers.length.sub(1)
+                ];
+                offerIndex[
+                    allOffers[offerIndex[_offerId].sub(1)].LD.loanId
+                ] = offerIndex[_offerId];
+                delete offerIndex[_offerId];
+                allOffers.pop();
+
+                /// @dev Remove offer from user's myOffers and update index
+                myOffers[_lender][
+                    myOfferIdx[_lender][_offerId].sub(1)
+                ] = myOffers[_lender][myOffers[_lender].length.sub(1)];
+                myOfferIdx[_lender][
+                    myOffers[_lender][myOffers[_lender].length.sub(1)].LD.loanId
+                ] = myOfferIdx[_lender][_offerId];
+                delete myOfferIdx[_lender][_offerId];
+                myOffers[_lender].pop();
+            }
+        } else if (requestIndex[_loanId] != 0) {
+            console.log(">> Upadating Loans List from a Request");
         }
     }
 

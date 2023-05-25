@@ -127,7 +127,7 @@ describe('Clixpesa P2P Loans', function () {
     const offerData = {
       LD: Object.values(offerDeatils),
       minLoanAmount: ethers.utils.parseUnits('0.5', tokenDecimals).toString(),
-      maxLoanAmount: ethers.utils.parseUnits('1', tokenDecimals).toString(),
+      maxLoanAmount: ethers.utils.parseUnits('3', tokenDecimals).toString(),
     }
     console.log("Creating a Loan Offer: ", offerData.LD[0])
     const txResponse = await P2PLoans.connect(addr2).createLoanOffer(Object.values(offerData))
@@ -139,6 +139,49 @@ describe('Clixpesa P2P Loans', function () {
     expect(await P2PLoans.getOffersByOwner(addr2.address)).to.have.lengthOf(1)
     const thisOffer = await P2PLoans.getOfferById(offerData.LD[0])
     expect(thisOffer.LD.initiator).to.be.equal(addr2.address)
+  })
+
+  it('ADD1 Should Borrow from Loan Offer', async function () {
+    const nanoid = customAlphabet('1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ', 10)
+    const amount = ethers.utils.parseUnits('1', tokenDecimals)
+    const p2pOffers = await P2PLoans.getOffersByOwner(addr2.address)
+    const offerId = p2pOffers[0].LD.loanId
+    const loanId = "LN" + nanoid()
+    const duration = 7 * 24 * 60 * 60
+    await Token.connect(addr1).approve(P2PLoans.address, amount)
+    delay(3000)
+    console.log("Borrowing from Loan Offer:", offerId)
+    const txResponse = await P2PLoans.connect(addr1).borrowFromOffer(offerId, loanId, amount, duration)
+    const txReceipt = await txResponse.wait()
+    const thisLog = txReceipt.logs.find((el) => el.address === P2PLoans.address)
+    const results = P2PLoansIface.parseLog({ data: thisLog.data, topics: thisLog.topics })
+    expect(results.args.P2PLD.LD.loanId).to.be.equal(loanId)
+    const thisLoan = await P2PLoans.getP2PLoanById(loanId)
+    expect(thisLoan.LD.principal).to.be.equal(amount)
+    expect(thisLoan.currentBalance).to.be.equal(amount)
+    expect(thisLoan.LD.initiator).to.be.equal(addr2.address)
+    expect(thisLoan.LS).to.be.equal(0)
+
+    const thisOffer = await P2PLoans.getOfferById(offerId)
+    expect(thisOffer.LD.principal).to.be.equal(p2pOffers[0].LD.principal.sub(amount))
+  })
+
+  it('ADD3 Should Borrow from Loan Offer and Offer should be removed', async function () {
+    const nanoid = customAlphabet('1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ', 10)
+    const amount = ethers.utils.parseUnits('1.8', tokenDecimals)
+    const p2pOffers = await P2PLoans.getOffersByOwner(addr2.address)
+    const offerId = p2pOffers[0].LD.loanId
+    const loanId = "LN" + nanoid()
+    const duration = 11 * 24 * 60 * 60
+    await Token.connect(addr1).approve(P2PLoans.address, amount)
+    delay(3000)
+    console.log("Borrowing from Loan Offer:", offerId)
+    const txResponse = await P2PLoans.connect(addr1).borrowFromOffer(offerId, loanId, amount, duration)
+    const txReceipt = await txResponse.wait()
+    const thisLog = txReceipt.logs.find((el) => el.address === P2PLoans.address)
+    const results = P2PLoansIface.parseLog({ data: thisLog.data, topics: thisLog.topics })
+    expect(results.args.P2PLD.LD.loanId).to.be.equal(loanId)
+    expect(await P2PLoans.getAvailableOffers()).to.have.lengthOf(0)
   })
 
 })
