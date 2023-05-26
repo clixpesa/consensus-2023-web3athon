@@ -296,38 +296,67 @@ contract P2PLoans {
         );
     }
 
-    /*
-    function borrowLoan(string memory _loanId) external {
-        require(offerIndex[_loanId] != 0, "Offer non-existent");
+    /// @notice Lender should fund pending Loan
+    /// @param _loanId Loan ID
+    function fundPendingLoan(string memory _loanId) external {
+        require(p2pLoanIndex[_loanId] != 0, "!Loan");
         require(
-            allOffers[offerIndex[_loanId]].initiator != msg.sender,
-            "No self borrowing"
+            allP2PLoans[p2pLoanIndex[_loanId].sub(1)].LP.lender == msg.sender,
+            "!Lender"
+        );
+        require(
+            allP2PLoans[p2pLoanIndex[_loanId].sub(1)].LS == LoanState.isPending,
+            "!Pending"
         );
 
-        allP2PLoans.push(
-            P2PLoanDetails(
-                allOffers[offerIndex[_loanId]],
-                LoanParticipants(
-                    payable(msg.sender),
-                    allRequests[offerIndex[_loanId]].initiator
-                ),
-                LoanState.isPending,
-                allRequests[offerIndex[_loanId]].principal,
-                block.timestamp.add(
-                    allRequests[offerIndex[_loanId]].maxDuration
-                )
-            )
-        );
-        myP2PLoans[msg.sender].push(allP2PLoans[allP2PLoans.length.sub(1)]);
-        myP2PLoanIdx[msg.sender][
-            allRequests[requestIndex[_loanId]].loanId
-        ] = myP2PLoans[msg.sender].length.sub(1);
-        p2pLoanIndex[allRequests[requestIndex[_loanId]].loanId] = allP2PLoans
-            .length
-            .sub(1);
+        console.log(">> Yes, this loan: %s", _loanId);
 
-        emit CreatedP2PLoan(msg.sender, allRequests[requestIndex[_loanId]]);
-    } */
+        /// @dev transfer funds to borrower
+        require(
+            allP2PLoans[p2pLoanIndex[_loanId].sub(1)].LD.token.transferFrom(
+                msg.sender,
+                allP2PLoans[p2pLoanIndex[_loanId].sub(1)].LP.borrower,
+                allP2PLoans[p2pLoanIndex[_loanId].sub(1)].LD.principal
+            ),
+            "!Transfer"
+        );
+
+        /// @dev update the loan details
+        allP2PLoans[p2pLoanIndex[_loanId].sub(1)].currentBalance = allP2PLoans[
+            p2pLoanIndex[_loanId].sub(1)
+        ].currentBalance.add(
+                allP2PLoans[p2pLoanIndex[_loanId].sub(1)].LD.principal
+            );
+        allP2PLoans[p2pLoanIndex[_loanId].sub(1)].LS = LoanState.isActive;
+
+        /// @dev update borrower's loan details
+        myP2PLoans[allP2PLoans[p2pLoanIndex[_loanId].sub(1)].LP.borrower][
+            myP2PLoanIdx[allP2PLoans[p2pLoanIndex[_loanId].sub(1)].LP.borrower][
+                _loanId
+            ].sub(1)
+        ].currentBalance = allP2PLoans[p2pLoanIndex[_loanId].sub(1)]
+            .LD
+            .principal;
+        myP2PLoans[allP2PLoans[p2pLoanIndex[_loanId].sub(1)].LP.borrower][
+            myP2PLoanIdx[allP2PLoans[p2pLoanIndex[_loanId].sub(1)].LP.borrower][
+                _loanId
+            ].sub(1)
+        ].LS = LoanState.isActive;
+
+        /// @dev update lender's loan details
+        myP2PLoans[msg.sender][myP2PLoanIdx[msg.sender][_loanId].sub(1)]
+            .currentBalance = allP2PLoans[p2pLoanIndex[_loanId].sub(1)]
+            .LD
+            .principal;
+        myP2PLoans[msg.sender][myP2PLoanIdx[msg.sender][_loanId].sub(1)]
+            .LS = LoanState.isActive;
+
+        emit FundedP2PLoan(
+            msg.sender,
+            _loanId,
+            allP2PLoans[p2pLoanIndex[_loanId].sub(1)].LD.principal
+        );
+    }
 
     /// @notice Utility functions
     /// @dev Update user's lists from a request
@@ -408,7 +437,7 @@ contract P2PLoans {
                     _thisOfferLD,
                     LoanParticipants(payable(_borrower), payable(_lender)),
                     LoanState.isPending,
-                    _amount,
+                    0,
                     block.timestamp.add(_duration)
                 )
             );
