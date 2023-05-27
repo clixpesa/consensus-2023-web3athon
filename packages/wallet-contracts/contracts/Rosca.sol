@@ -1,13 +1,18 @@
 // SPDX-License-Identifier: Apache 2.0
 pragma solidity ^0.8.7;
-
-// Importing OpenZeppelin's SafeMath Implementation
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./utils.sol";
 import "hardhat/console.sol";
 
-struct RoscaDetails {
+/**
+@title Clixpesa Rosca Space Contract
+@author Dekan Kachi - @kachdekan
+@notice Allow users to from a RoSCA savings groups, 
+creact savings pockets, and lend to each other within the group.
+*/
+
+struct RoscaInputDetails {
     IERC20 token;
     string roscaName;
     string imgLink;
@@ -23,251 +28,168 @@ struct RoscaDetails {
 contract Rosca {
     using SafeMath for uint256;
 
-    enum RoundState {
+    enum PotRoundState {
         isOpen,
         isClosed,
-        isPayedOut
+        isPaidOut,
+        isDelayed
     }
-
     enum RoscaState {
-        isStarting,
-        isLive,
-        isEnded,
+        isActive,
         isInActive
     }
 
-    IERC20 private token;
+    /// @dev Round details
+    struct PotRoundDetails {
+        uint256 roundId;
+        address payable roundOwner;
+        uint256 roundAmount;
+        uint256 roundBalance;
+        uint256 roundDeadline;
+        mapping(address => uint256) contributions;
+        PotRoundState roundState;
+    }
 
-    //Initialize public variables
-    address payable[] members;
-    address payable[] admins;
-    address payable dueMember;
-    mapping(address => uint256) contributions;
     mapping(address => bool) isMember;
     mapping(address => bool) isPotted;
-    mapping(address => bool) isCtbCleared;
-    RoscaDetails RD;
-    uint256 roscaBalance;
-    uint256 goalBalance;
-    uint256 ctbAmount;
-    uint256 roundNo;
-    uint256 ctbDeadline;
-    uint256 disbDeadline;
 
-    //Initialize states
-    RoscaState public rcState = RoscaState.isStarting;
-    RoundState public rdState = RoundState.isOpen;
-
-    //state modifiers
-    modifier roscaState(RoscaState _state) {
-        require(rcState == _state);
-        _;
+    /// @dev Rosca details
+    struct RoscaDetails {
+        RoscaInputDetails RID;
+        RoscaState roscaState;
+        PotRoundDetails PD;
+        address[] members;
+        address[] admins;
+        string[] activeLoanIds;
+        string[] loanRequestIds;
+        string[] loanOfferIds;
+        uint256 currentBalance;
     }
 
-    modifier roundState(RoundState _state) {
-        require(rdState == _state);
-        _;
-    }
-
-    event CreatedRound(
-        uint256 roundNo,
-        uint256 ctbDeadline,
-        uint256 disbDeadline,
-        address payable dueMember
+    /// @dev Rosca events
+    event CreatedNewRound(
+        uint256 roundId,
+        address payable roundOwner,
+        uint256 roundDeadline
     );
-    event PaidoutRound(
-        address payedMember,
-        uint256 paidAmount,
-        uint256 roundNo
-    );
-
-    // Function to receive Ether. msg.data must be empty
-    receive() external payable {}
-
-    // Fallback function is called when msg.data is not empty
-    fallback() external payable {}
-
-    constructor(address payable _creator, RoscaDetails memory _rD) {
-        token = _rD.token;
-        roscaBalance = 0;
-        goalBalance = 0;
-        RD = _rD;
-        admins.push(_creator);
-        members.push(_creator);
-        isMember[_creator] = true;
-        //Evaluate whether to create a round before all memebers have joined.
-        //Creates round with creator being 1st receiver
-        createRound();
-    }
-
-    function getDetails()
-        external
-        view
-        returns (
-            string memory roscaName,
-            string memory imgLink,
-            uint256 goalAmount,
-            string memory ctbDay,
-            string memory ctbOccur,
-            string memory disbDay,
-            uint256 activeMembers,
-            uint256 currentRound,
-            uint256 nxtDeadline,
-            address creator,
-            uint256 roscaBal,
-            address roscaAddress
-        )
-    {
-        roscaName = RD.roscaName;
-        imgLink = RD.imgLink;
-        goalAmount = RD.goalAmount;
-        ctbDay = RD.ctbDay;
-        ctbOccur = RD.ctbOccur;
-        disbDay = RD.disbDay;
-        currentRound = roundNo;
-        creator = admins[0];
-        activeMembers = members.length;
-        return (
-            roscaName,
-            imgLink,
-            goalAmount,
-            ctbDay,
-            ctbOccur,
-            disbDay,
-            activeMembers,
-            currentRound,
-            ctbDeadline,
-            creator,
-            token.balanceOf(address(this)),
-            address(this)
-        );
-    }
-
-    function getMembers() external view returns (address payable[] memory) {
-        return members;
-    }
-
-    function getRoscaBalance() public view returns (uint256) {
-        return token.balanceOf(address(this));
-    }
-
-    function getMemberBalance() public view returns (uint256) {
-        return members[0].balance;
-    }
-
-    function joinRosca(
-        string calldata authCode
-    ) external returns (bool success) {
-        require(
-            keccak256(abi.encode(authCode)) ==
-                keccak256(abi.encode(RD.authCode)),
-            "Invalid authorization code!"
-        );
-        require(isMember[msg.sender] == false, "You are already a Member");
-        members.push(payable(msg.sender));
-        isMember[msg.sender] = true;
-        success = true;
-    }
-
-    function createRound() internal {
-        uint256 ctbDay = _getDayNo(RD.ctbDay);
-        uint256 disbDay = _getDayNo(RD.disbDay);
-        ctbDeadline = nextDayAndTime(ctbDay);
-        disbDeadline = nextDayAndTime(disbDay);
-        if (rcState == RoscaState.isStarting) {
-            roundNo = 1;
-            dueMember = members[roundNo - 1];
-            rcState = RoscaState.isLive;
-            rdState = RoundState.isOpen;
-            ctbDeadline = nextDayAndTime(ctbDay);
-            disbDeadline = nextDayAndTime(disbDay);
-        } else {
-            if (roundNo >= members.length) {
-                roundNo = 0;
-            }
-            roundNo += 1;
-            dueMember = members[roundNo - 1];
-            rdState = RoundState.isOpen;
-            ctbDeadline += 7 days;
-            disbDeadline += 7 days;
-        }
-
-        emit CreatedRound(roundNo, ctbDeadline, disbDeadline, dueMember);
-    }
-
-    //Fund the round
-    function fundRound(
+    event FundedRound(
+        uint256 roundId,
+        address payable roundContributor,
         uint256 amount
-    ) external payable roundState(RoundState.isOpen) {
-        require(goalBalance < RD.goalAmount, "Round is fully funded");
-        //require(msg.sender != dueMember, "It's your round. Relax!");
-        require(
-            contributions[msg.sender] < RD.ctbAmount,
-            "You have fully contributed to this Round"
-        );
-        require(token.balanceOf(msg.sender) >= amount, "Insuficient Funds");
-        require(
-            token.transferFrom(msg.sender, address(this), amount),
-            "Failed to Fund Rosca"
-        );
-        //cUSDToken.transferFrom(msg.sender, address(this), amount);
+    );
+    event PaidOutRound(
+        uint256 roundId,
+        address payable roundOwner,
+        uint256 amount
+    );
+    event LoanRequestCreated(
+        string loanRequestId,
+        address payable loanRequester,
+        uint256 amount
+    );
+    event LoanOfferCreated(
+        string loanOfferId,
+        address payable loanOfferer,
+        uint256 poolsize
+    );
+    event LoanInitiated(
+        string loanId,
+        address payable loanInitiator,
+        address payable loanRecipient,
+        uint256 amount
+    );
 
-        contributions[msg.sender] = contributions[msg.sender].add(amount);
-        goalBalance = goalBalance.add(amount);
-        roscaBalance = getRoscaBalance();
-        if (goalBalance == RD.goalAmount) {
-            rdState = RoundState.isClosed;
-        }
+    /// @dev Initialize Rosca contract
+    RoscaDetails RD;
+
+    constructor(RoscaInputDetails memory _RID) {
+        RD.RID = _RID;
+        RD.roscaState = RoscaState.isActive;
+        RD.currentBalance = RD.RID.token.balanceOf(address(this));
+        RD.members.push(msg.sender);
+        RD.admins.push(msg.sender);
+        isMember[msg.sender] = true;
+
+        /// @dev Initialize first round
+        _createNewRound();
     }
 
-    /*
-    /// Not enough funds for transfer. Requested `requested`,
-    /// but only `available` available.
-    error NotEnoughFunds(uint requested, uint available);
-    */
-
-    //Payout the round
-    // !Payout at the given Payout deadline.
-    function payoutRound() public payable returns (bool payedout) {
-        //uint256 balance = getRoscaBalance();
-        require(goalBalance == RD.goalAmount, "The round is not fully funded");
-        require(isMember[dueMember], "Due member is not a member! Reary?!");
-        //change to be transfer with cUSDToken
-        //cUSDToken.transferFrom(address(this), dueMember, RD.goalAmount);
+    /// @dev Members can join the Rosca with an authCode
+    function joinRosca(string memory _authCode) public {
         require(
-            token.balanceOf(address(this)) >= RD.goalAmount,
-            "Insuficient Funds"
+            keccak256(abi.encode(_authCode)) ==
+                keccak256(abi.encode(RD.RID.authCode)),
+            "!authCode"
         );
-        require(
-            token.transfer(dueMember, RD.goalAmount),
-            "Failed to pay due member"
-        );
-        goalBalance = 0;
-        //Reset Contributons
-        for (uint256 i = 0; i < members.length; i++) {
-            contributions[members[i]] = 0;
-        }
-        isPotted[dueMember] = true;
-        rdState = RoundState.isPayedOut;
-        roscaBalance = getRoscaBalance();
-        emit PaidoutRound(dueMember, RD.goalAmount, roundNo);
-        //Create another round
-        createRound();
-        return true;
+        require(isMember[msg.sender] == false, "Already a member");
+        RD.members.push(msg.sender);
+        isMember[msg.sender] = true;
     }
 
-    function withdrawFunds() external payable returns (bool withdrawn) {
-        require(rdState != RoundState.isPayedOut, "Already PayedOut");
-        require(msg.sender == dueMember, "This is not your round");
-        if (payoutRound()) {
-            return true;
-        }
-        return false;
+    /// @dev Create new round
+    function _createNewRound() internal {
+        uint256 _ctbDay = _getDayNo(RD.RID.ctbDay);
+        uint256 _ctbDeadline = _nextDayAndTime(_ctbDay);
+        RD.PD.roundId = RD.PD.roundId.add(1);
+        RD.PD.roundOwner = payable(RD.members[RD.PD.roundId.sub(1)]); //check this!!
+        RD.PD.roundAmount = RD.RID.ctbAmount;
+        RD.PD.roundBalance = 0;
+        RD.PD.roundDeadline = _ctbDeadline;
+        RD.PD.roundState = PotRoundState.isOpen;
+
+        emit CreatedNewRound(
+            RD.PD.roundId,
+            payable(RD.members[0]),
+            RD.PD.roundDeadline
+        );
     }
 
-    // schDay: 1. Monday 7. Sunday //schOcurr: 1-daily, 7-weekly, 28-monthly
-    //Handled weekly for now. !TODO: handle daily and monthly
-    function nextDayAndTime(
+    /// @dev Fund round
+    function fundRound(uint256 _amount) external {
+        require(isMember[msg.sender] == true, "!Member");
+        require(
+            RD.PD.contributions[msg.sender] < RD.RID.ctbAmount,
+            "Fully contributed"
+        );
+        require(
+            RD.PD.roundState == PotRoundState.isOpen ||
+                RD.PD.roundState == PotRoundState.isDelayed,
+            "Round not open for funding"
+        );
+        require(RD.PD.roundDeadline > block.timestamp, "Round deadline passed");
+        require(
+            RD.RID.token.balanceOf(msg.sender) >= RD.RID.ctbAmount,
+            "Insufficient balance"
+        );
+        require(
+            RD.RID.token.transferFrom(
+                msg.sender,
+                payable(address(this)),
+                _amount
+            ),
+            "Transfer failed"
+        );
+
+        RD.PD.contributions[msg.sender] = RD.PD.contributions[msg.sender].add(
+            _amount
+        );
+        RD.PD.roundBalance = RD.PD.roundBalance.add(_amount);
+        RD.currentBalance = RD.RID.token.balanceOf(address(this));
+
+        if (RD.PD.roundBalance == RD.PD.roundAmount) {
+            RD.PD.roundState = PotRoundState.isClosed;
+        }
+
+        emit FundedRound(RD.PD.roundId, payable(msg.sender), _amount);
+    }
+
+    /// @dev Interna utility fyunction to get day number
+    /// @dev schDay: 1. Monday 7. Sunday
+    /// @dev schOcurr: 1-daily, 7-weekly, 28-monthly
+    /// @dev Handled weekly for now.
+    /// @dev !TODO: handle daily and monthly
+
+    function _nextDayAndTime(
         uint256 schDay
     ) internal view returns (uint256 nextTimeStamp) {
         uint256 day;
@@ -291,7 +213,7 @@ contract Rosca {
     }
 
     function _getDayNo(
-        string storage day
+        string memory day
     ) internal pure returns (uint256 dayNo) {
         string[7] memory weekList = [
             "Monday",
