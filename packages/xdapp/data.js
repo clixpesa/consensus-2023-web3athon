@@ -28,13 +28,21 @@ export const transactions = [
 ];
 
 export const spaces = [
-  { id: '0x1', type: 'rosca', name: 'Masomo', balance: '50', token: 'cUSD' },
+  {
+    id: '0x1',
+    type: 'contribution',
+    name: 'Masomo',
+    balance: '50',
+    token: 'cUSD',
+    dueDate: '20 Mar 2020',
+  },
   {
     id: '0x2',
     type: 'rosca',
     name: 'TMK Wanaume',
-    balance: '500',
+    balance: '5000',
     token: 'cUSD',
+    dueDate: '20 Mar 2020',
   },
   {
     id: '0x3',
@@ -42,6 +50,7 @@ export const spaces = [
     name: 'Vacation',
     balance: '500',
     token: 'cUSD',
+    dueDate: '20 Mar 2020',
   },
 ];
 

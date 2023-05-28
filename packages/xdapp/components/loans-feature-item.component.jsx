@@ -1,7 +1,7 @@
 import { Box, Text, HStack, VStack, Pressable, Avatar } from '@clixpesa/native-base';
 import { useNavigation } from '@react-navigation/native';
 
-const FeatureItem = (props) => {
+const LoansFeatureItem = (props) => {
   const navigation = useNavigation();
   const title = props.itemTitle.split(' ');
   const initials =
@@ -17,8 +17,8 @@ const FeatureItem = (props) => {
     >
       <HStack space={3} my={2} mx={3} alignItems="center">
         <Avatar
-          bg={props.initiated ? 'primary.100' : 'primary.500'}
-          _text={{ color: props.initiated ? 'primary.600' : 'primary.100' }}
+        //bg={props.initiated ? 'primary.100' : 'primary.500'}
+        //_text={{ color: props.initiated ? 'primary.600' : 'primary.100' }}
         >
           {initials}
         </Avatar>
@@ -43,4 +43,4 @@ const FeatureItem = (props) => {
   );
 };
 
-export default FeatureItem;
+export default LoansFeatureItem;
