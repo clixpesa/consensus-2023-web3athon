@@ -49,7 +49,6 @@ const TAB_ICON = {
 };
 
 const screenOptions = ({ route }) => {
-  console.log(route.name);
   const iconName = TAB_ICON[route.name];
   return {
     tabBarIcon: ({ focused }) => (
