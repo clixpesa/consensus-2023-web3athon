@@ -54,6 +54,19 @@ export const spaces = [
   },
 ];
 
+export const roundDetails = {
+  id: '0x1',
+  token: 'cUSD',
+  roundOwner: 'Abedy 0x1234...5678',
+  roundNo: '1',
+  roundBal: '1000',
+  roundGoal: '5000',
+  roundDueDate: '20 Mar 2020',
+  memberCount: '10',
+  myContribution: '100',
+  ctbCount: '5',
+};
+
 export const rates = { cKES: 1, cUSD: 125.75, CELO: 125.75 * 0.485 };
 
 export const spareChangeList = [

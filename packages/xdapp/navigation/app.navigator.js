@@ -9,6 +9,8 @@ import { LoansNavigator } from './loans.navigator';
 import { AccountNavigator } from './account.navigator';
 
 import { HomeScreen, DepositScreen } from '../features/essentials';
+import { SpacesHomeScreen } from '../features/spaces';
+import RoscaTabsNavigator from './rosca-tabs.navigator';
 
 const Tab = createBottomTabNavigator();
 const AppStack = createNativeStackNavigator();
@@ -26,6 +28,9 @@ export const AppNavigator = () => {
         <AppStack.Screen name="depositFunds" component={DepositScreen} />
       </AppStack.Group>
       {/* Spaces modals*/}
+      <AppStack.Group screenOptions={{ presentation: 'modal' }}>
+        <AppStack.Screen name="Rosca" component={RoscaTabsNavigator} />
+      </AppStack.Group>
     </AppStack.Navigator>
   );
 };
@@ -34,7 +39,7 @@ const BottomTabNavigator = () => {
   return (
     <Tab.Navigator screenOptions={screenOptions}>
       <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Spaces" component={SpacesNavigator} />
+      <Tab.Screen name="Spaces" component={SpacesHomeScreen} />
       <Tab.Screen name="Loans" component={LoansNavigator} />
       <Tab.Screen name="Account" component={AccountNavigator} />
     </Tab.Navigator>
