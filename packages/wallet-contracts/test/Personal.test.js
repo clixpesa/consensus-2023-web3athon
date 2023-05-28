@@ -57,6 +57,7 @@ describe('Clixpesa Personal Spaces', function () {
     const txReceipt = await txResponse.wait()
     const thisLog = txReceipt.logs.find((el) => el.address === Personal.address)
     const results = PersonalIface.parseLog({ data: thisLog.data, topics: thisLog.topics })
+    // console.log("results ================>>>>> ", results)
     expect(results.args[1][1]).to.be.equal(addr2.address)
   })
 
@@ -147,6 +148,7 @@ describe('Clixpesa Personal Spaces', function () {
     expect(thisPersonalSpaceBal).to.be.equal(personalSpaces2[0].currentBalance)
   })
 
+
   it('Should fully fund ADD2 personal space', async function () {
     const spaceBal = await Token.balanceOf(Personal.address)
     const personalSpaces = await Personal.getPersonalSpacesByOwner(addr2.address)
@@ -164,7 +166,6 @@ describe('Clixpesa Personal Spaces', function () {
     expect(thisPersonalSpaceBal.add(amount)).to.be.equal(personalSpaces2[0].currentBalance)
     expect(personalSpaces2[0].SS.currentFundState).to.be.equal(1)
   })
- 
   it('Should close ADD2 personal space and withdraw all funds', async function () {
     const personalSpaces = await Personal.getPersonalSpacesByOwner(addr2.address)
     const thisPersonalSpaceBal = personalSpaces[0].currentBalance
@@ -182,6 +183,7 @@ describe('Clixpesa Personal Spaces', function () {
     expect(spaceBal.sub(thisPersonalSpaceBal)).to.be.equal(await Token.balanceOf(Personal.address))
     //check if timeOfClosure is LESS than deadline
     //expect(personalSpaces2[0].SS.timeOfClosure).to.be.lessThan(personalSpaces2[0].SD.deadline)
+  
 
   })
 
