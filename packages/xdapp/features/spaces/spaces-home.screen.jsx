@@ -36,7 +36,7 @@ export default function SpacesHomeScreen() {
               btn1={{
                 icon: <Icon as={Feather} name="plus" size="md" color="primary.600" mr="1" />,
                 name: 'New Space',
-                screen: 'depositFunds',
+                screen: 'createSpace',
               }}
               btn2={{
                 icon: <Icon as={Feather} name="arrow-right" size="md" color="primary.600" mr="1" />,

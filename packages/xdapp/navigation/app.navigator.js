@@ -9,7 +9,12 @@ import { useNavigation } from '@react-navigation/native';
 import { AccountNavigator } from './account.navigator';
 
 import { HomeScreen, DepositScreen } from '../features/essentials';
-import { SpacesHomeScreen } from '../features/spaces';
+import {
+  SpacesHomeScreen,
+  CreateSpaceScreen,
+  SelectContactsScreen,
+  SetRoscaGoalScreen,
+} from '../features/spaces';
 import { LoansHomeScreen } from '../features/microloans';
 import RoscaTabsNavigator from './rosca-tabs.navigator';
 import LoansTabsNavigator from './loan-tabs.navigator';
@@ -32,6 +37,9 @@ export const AppNavigator = () => {
       {/* Spaces modals*/}
       <AppStack.Group screenOptions={{ presentation: 'modal' }}>
         <AppStack.Screen name="Rosca" component={RoscaTabsNavigator} />
+        <AppStack.Screen name="createSpace" component={CreateSpaceScreen} />
+        <AppStack.Screen name="selectContacts" component={SelectContactsScreen} />
+        <AppStack.Screen name="setRoscaGoal" component={SetRoscaGoalScreen} />
       </AppStack.Group>
       {/* Loans modals*/}
       <AppStack.Group screenOptions={{ presentation: 'modal' }}>
