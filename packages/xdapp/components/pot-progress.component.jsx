@@ -9,16 +9,6 @@ const PotProgressCard = ({
   myCtb,
   token,
 }) => {
-  console.log(
-    'PotProgressCard',
-    roundBal,
-    goalAmount,
-    dueDate,
-    memberCount,
-    ctbCount,
-    myCtb,
-    token,
-  );
   const prog = ((roundBal * 1) / (goalAmount * 1)) * 100;
   return (
     <Box>
@@ -40,7 +30,7 @@ const PotProgressCard = ({
             </Text>
             <Spacer />
             <Text _light={{ color: 'muted.500' }} fontWeight="medium">
-              {ctbCount}/{memberCount} Contributions
+              {ctbCount}/{memberCount} Contributors
             </Text>
           </HStack>
         </VStack>

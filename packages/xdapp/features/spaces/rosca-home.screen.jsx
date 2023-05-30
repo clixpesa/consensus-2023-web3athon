@@ -40,7 +40,7 @@ export default function RoscaHomeScreen() {
               apprxBalance={(totalBalance * 120.75).toFixed(2).toString()}
               btn1={{
                 icon: <Icon as={Feather} name="plus" size="md" color="primary.600" mr="1" />,
-                name: 'Fund',
+                name: 'Fund Space',
                 screen: 'depositFunds',
               }}
               btn2={{

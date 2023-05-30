@@ -100,3 +100,113 @@ export const spareChangeList = [
     selected: false,
   },
 ];
+
+export const LoansData = [
+  {
+    title: 'Active Loans',
+    data: [
+      {
+        id: 'LN001',
+        name: 'Akimbo <> Wanaume', // derive name from participants
+        principal: '5000', // amount payable if payed on time
+        dueDate: '20 Mar 2020',
+        token: 'cUSD',
+        isPending: true,
+        currentBal: '1000',
+        paid: '4000',
+        isLender: false, // derive and show lender
+      },
+      {
+        id: 'LN002',
+        name: 'Akimbo <> Kachi',
+        principal: '3000',
+        dueDate: '20 Mar 2020',
+        token: 'cUSD',
+        isPending: false,
+        currentBal: '1000',
+        paid: '4000',
+        lender: false,
+      },
+      {
+        id: 'LN003',
+        name: 'Bishi <> Halima',
+        principal: '4000',
+        dueDate: '20 Mar 2020',
+        token: 'cUSD',
+        isPending: true,
+        currentBal: '1000',
+        paid: '4000',
+        lender: true,
+      },
+    ],
+  },
+  {
+    title: 'Loan Offers',
+    data: [
+      {
+        id: 'LO001',
+        token: 'cUSD',
+        from: 'Akimbo Keya',
+        type: 'individual', // or "group
+        lendingPool: '10000',
+        minAmount: '500',
+        maxAmount: '1000',
+        minDuration: '7', //days
+        maxDuration: '21', //weeks
+        interest: '5', //percent
+      },
+      {
+        id: 'LO002',
+        token: 'cUSD',
+        from: 'Wrong Rende',
+        type: 'group', // or "group
+        lendingPool: '3000',
+        minAmount: '50',
+        maxAmount: '100',
+        minDuration: '7', //days
+        maxDuration: '21', //weeks
+        interest: '5', //percent
+      },
+    ],
+  },
+  {
+    title: 'Loan Requests',
+    data: [
+      {
+        id: 'LO001',
+        from: 'Akimbo Keya',
+        type: 'individual', // or "group
+        token: 'cUSD',
+        principal: '500',
+        minDuration: '7', //days
+        maxDuration: '21', //weeks
+        interest: '5', //percent
+        creditScore: '5',
+      },
+      {
+        id: 'LO002',
+        from: 'Dekan Kachi',
+        type: 'individual', // or "group
+        token: 'cUSD',
+        principal: '3000',
+        minDuration: '7', //days
+        maxDuration: '21', //weeks
+        interest: '5', //percent
+        creditScore: '5',
+      },
+    ],
+  },
+];
+
+export const pockets = [
+  {
+    id: 'RP001',
+    name: 'Masomo',
+    balance: '50',
+    goal: '500',
+    token: 'cUSD',
+    dueDate: '20 Mar 2020',
+    type: 'contribution',
+    idInitiator: true,
+  },
+];
