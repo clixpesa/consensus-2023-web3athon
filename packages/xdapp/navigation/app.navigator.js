@@ -4,13 +4,15 @@ import Icon from 'react-native-remix-icon';
 import { Box, Text, Avatar, Pressable, HStack } from '@clixpesa/native-base';
 import { useNavigation } from '@react-navigation/native';
 
-import { SpacesNavigator } from './spaces.navigator';
-import { LoansNavigator } from './loans.navigator';
+//import { SpacesNavigator } from './spaces.navigator';
+//import { LoansNavigator } from './loans.navigator';
 import { AccountNavigator } from './account.navigator';
 
 import { HomeScreen, DepositScreen } from '../features/essentials';
 import { SpacesHomeScreen } from '../features/spaces';
+import { LoansHomeScreen } from '../features/microloans';
 import RoscaTabsNavigator from './rosca-tabs.navigator';
+import LoansTabsNavigator from './loan-tabs.navigator';
 
 const Tab = createBottomTabNavigator();
 const AppStack = createNativeStackNavigator();
@@ -31,6 +33,10 @@ export const AppNavigator = () => {
       <AppStack.Group screenOptions={{ presentation: 'modal' }}>
         <AppStack.Screen name="Rosca" component={RoscaTabsNavigator} />
       </AppStack.Group>
+      {/* Loans modals*/}
+      <AppStack.Group screenOptions={{ presentation: 'modal' }}>
+        <AppStack.Screen name="Loan" component={LoansTabsNavigator} />
+      </AppStack.Group>
     </AppStack.Navigator>
   );
 };
@@ -40,7 +46,7 @@ const BottomTabNavigator = () => {
     <Tab.Navigator screenOptions={screenOptions}>
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Spaces" component={SpacesHomeScreen} />
-      <Tab.Screen name="Loans" component={LoansNavigator} />
+      <Tab.Screen name="Loans" component={LoansTabsNavigator} />
       <Tab.Screen name="Account" component={AccountNavigator} />
     </Tab.Navigator>
   );
