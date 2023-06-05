@@ -42,9 +42,10 @@ While members of a chama can be able to borrow from each other within their savi
 #### Presentation
 
 - Watch the [Live Demo](https://youtu.be/zrspj_y1zNA).
-- Try it yourself. [Clixpesa App](https://expo.dev/@kachdn/clix-consensus?serviceType=classic&distribution=expo-go)
+- Try it yourself.
+![image](https://github.com/clixpesa/consensus-2023-web3athon/assets/17332607/6e14247e-d1f9-4a67-86a5-f48af790f774)
 _ps: to run the app, you will need an [expo go app](https://expo.dev/client) installed._
-  _scan the [qr code](https://expo.dev/@kachdn/clix-consensus?serviceType=classic&distribution=expo-go) with your phone's camera or with expo go. Enjoy!_
+  _scan the **qr code** with your phone's camera or with expo go. Enjoy!_
 
 #### Next Steps
 
